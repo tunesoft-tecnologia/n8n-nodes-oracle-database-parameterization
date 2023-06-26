@@ -8,9 +8,8 @@ import {
   NodeOperationError,
 } from "n8n-workflow";
 import { ConnectionAttributes } from "oracledb";
-import path from "path";
-// const oracledb = require("oracledb");
 import oracledb from "oracledb";
+import { OracleConnection } from "./core/connection";
 
 export class OracleDatabase implements INodeType {
   description: INodeTypeDescription = {
@@ -49,19 +48,17 @@ export class OracleDatabase implements INodeType {
 
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
     const credentials = await this.getCredentials("oracleCredentials");
-    let connection = null;
+    const oracleCredentials = {
+      user: String(credentials.user),
+      password: String(credentials.password),
+      connectionString: String(credentials.connectionString),
+    };
 
-    const { user, password, connectionString, thinMode } = credentials;
-    const dbConfig = {
-      user,
-      password,
-      connectionString,
-    } as ConnectionAttributes;
-
-    if (!thinMode) {
-      oracledb.initOracleClient({ libDir: process.env.LD_LIBRARY_PATH });
-    }
-    connection = await oracledb.getConnection(dbConfig);
+    const db = new OracleConnection(
+      oracleCredentials,
+      Boolean(credentials.thinMode)
+    );
+    const connection = await db.getConnection();
 
     let returnItems = [];
 
