@@ -32,5 +32,12 @@ export class Oracle implements ICredentialType {
       type: "string",
       default: "localhost/orcl",
     },
+    {
+      displayName: "Use Thin mode",
+      name: "thinMode",
+      type: "boolean",
+      default: true,
+      description: "Define type of connection with database",
+    },
   ];
 }

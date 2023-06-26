@@ -1,61 +1,58 @@
 const oracledb = require("oracledb");
-
+const path = require("path");
 async function connect() {
   try {
+    oracledb.initOracleClient({
+      libDir: path.relative(__dirname, "./nodes/Oracle/oic/instantclient_11_2"),
+    });
+    const user = "system";
+    const sid = null;
+    const serial = null;
     const connection = await oracledb.getConnection({
       user: "system",
-      password: "admin",
-      connectionString: "localhost:1521/default",
+      password: "oracle",
+      connectionString: "localhost/xe",
     });
-    console.log("Conectou ");
-    const result = await connection.execute("SELECT * FROM ANONYMOUS.TODO t ");
-    console.log(result.rows);
+
+    await connection.execute(
+      // "SELECT * FROM ANONYMOUS.TODO t",
+      "INSERT INTO ANONYMOUS.TODO (TITLE, DESCRIPTION) VALUES ('teste', 'teste leitura')",
+      [],
+      {
+        outFormat: oracledb.OUT_FORMAT_OBJECT,
+        autoCommit: false,
+      }
+    );
+
+    const sessionInfo = await connection.execute(
+      `SELECT SYS_CONTEXT('USERENV', 'SID') AS SID, SYS_CONTEXT('USERENV', 'SERIAL#') AS SERIAL FROM DUAL`
+    );
+    sid = sessionInfo.rows[0].SID;
+    serial = sessionInfo.rows[0].SERIAL;
+
+    const result = await connection.execute(
+      // "SELECT * FROM ANONYMOUS.TODO t",
+      "INSERT INTO ANONYMOUS.TODO (TITLE, DESCRIPTION) VALUES ('teste', 'teste leitura')",
+      [],
+      {
+        outFormat: oracledb.OUT_FORMAT_OBJECT,
+        autoCommit: false,
+      }
+    );
+    const connection2 = await oracledb.getConnection({
+      user: "system",
+      password: "oracle",
+      connectionString: "localhost/xe",
+      externalAuth: false, // Defina como `true` se estiver usando autenticação externa
+      sessionId: sid,
+      serialNumber: serial,
+    });
+
+    console.log(sessionInfo);
+    console.log(result);
   } catch (error) {
     console.log(error);
   }
 }
 
 connect();
-
-// const oracledb = require('oracledb'); async function runApp()
-// {
-//   let connection;
-//   try {
-//     connection = await oracledb.getConnection({ user: "demonode", password: "XXXX", connectionString: "localhost/xepdb1" });
-//     console.log("Successfully connected to Oracle Database");
-//
-//     // Create a table
-//     await connection.execute(`begin execute immediate 'drop table todoitem'; exception when others then if sqlcode <> -942 then raise; end if; end;`);
-//     await connection.execute(`create table todoitem ( id number generated always as identity, description varchar2(4000), creation_ts timestamp with time zone default current_timestamp, done number(1,0), primary key (id))`);
-//
-//     // Insert some data
-//     const sql = `insert into todoitem (description, done) values(:1, :2)`;
-//     const rows = [ ["Task 1", 0 ], ["Task 2", 0 ], ["Task 3", 1 ], ["Task 4", 0 ], ["Task 5", 1 ] ];
-//     let result = await connection.executeMany(sql, rows);
-//     console.log(result.rowsAffected, "Rows Inserted");
-//     connection.commit();
-//
-//     // Now query the rows back
-//     result = await connection.execute( `select description, done from todoitem`, [], { resultSet: true, outFormat: oracledb.OUT_FORMAT_OBJECT });
-//     const rs = result.resultSet; let row;
-//     while ((row = await rs.getRow())) {
-//       if (row.DONE)
-//         console.log(row.DESCRIPTION, "is done");
-//       else
-//         console.log(row.DESCRIPTION, "is NOT done");
-//     }
-//     await rs.close();
-//   } catch (err) {
-//     console.error(err);
-//   } finally {
-//     if (connection)
-//     {
-//       try {
-//         await connection.close();
-//       } catch (err) {
-//         console.error(err);
-//       }
-//     }
-//   }
-// }
-// runApp();
