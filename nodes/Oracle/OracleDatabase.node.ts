@@ -33,7 +33,7 @@ export class OracleDatabase implements INodeType {
     ],
     properties: [
       {
-        displayName: "SQL Statment",
+        displayName: "SQL Statement",
         name: "query",
         type: "string",
         typeOptions: {
