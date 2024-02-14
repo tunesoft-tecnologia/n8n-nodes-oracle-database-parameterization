@@ -1,6 +1,6 @@
 # n8n-nodes-oracle-database-parameterization
 
-[Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/) oracla database node for n8n
+[Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/) database node for n8n
 
 Forked from https://www.npmjs.com/package/n8n-nodes-oracle-database with the intent of adding parameterization funcationality.
 
