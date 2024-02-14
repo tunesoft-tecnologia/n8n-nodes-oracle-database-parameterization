@@ -1,6 +1,6 @@
 {
-  "name": "n8n-nodes-oracle-database",
-  "version": "0.0.1",
+  "name": "n8n-nodes-oracle-database-parameterization",
+  "version": "1.0.0",
   "description": "",
   "keywords": [
     "n8n-community-node-package",
@@ -9,12 +9,12 @@
   "license": "MIT",
   "homepage": "",
   "author": {
-    "name": "Matheus Peluchi",
-    "email": "matheuspeluchi@gmail.com"
+    "name": "Joshua Griffin",
+    "email": "josh.griff00@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/matheuspeluchi/n8n-nodes-oracle-database.git"
+    "url": "https://github.com/jgriffin1/n8n-nodes-oracle-database-parameterization.git"
   },
   "main": "index.js",
   "scripts": {

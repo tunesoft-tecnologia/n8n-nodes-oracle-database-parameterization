@@ -1,8 +1,8 @@
-# n8n-nodes-oracle-database
+# n8n-nodes-oracle-database-parameterization
 
 [Oracle](https://docs.oracle.com/en/database/oracle/oracle-database/) oracla database node for n8n
 
-To use this connector in versions prior to version 12 of the oracle database, the n8n environment needs an Oracle Instant Client dependency installed and the environment variable LD_LIBRARY_PATH pointing to the folder where the OIC (Oracle instat Client) is located.
+Forked from https://www.npmjs.com/package/n8n-nodes-oracle-database with the intent of adding parameterization funcationality.
 
 ## License
 
