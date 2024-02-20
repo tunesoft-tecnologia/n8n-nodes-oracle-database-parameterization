@@ -64,6 +64,7 @@ export class OracleDatabase implements INodeType {
                 type: 'string',
                 default: '',
                 placeholder: 'e.g. param_name',
+                hint: 'Do not start with ":"',
                 required: true,
               },
               {
@@ -71,9 +72,32 @@ export class OracleDatabase implements INodeType {
                 name: 'value',
                 type: 'string',
                 default: '',
-                placeholder: 'e.g. 12345',
+                placeholder: 'Example: 12345',
                 required: true,
               },
+              {
+                displayName: 'Data Type',
+                name: 'datatype',
+                type: 'options',
+                required: true,
+                default: 'string',
+                options: [
+                  { name: 'String', value: 'string' },
+                  { name: 'Number', value: 'number' }
+                ]
+              },
+              {
+                displayName: 'Parse for IN statement',
+                name: 'parseInStatement',
+                type: 'options',
+                required: true,
+                default: false,
+                hint: 'If "Yes" the "Value" field should be a string of comma-separated values. i.e: 1,2,3 or str1,str2,str3',
+                options: [
+                  { name: 'No', value: false },
+                  { name: 'Yes', value: true }
+                ]
+              }
             ],
           },
         ],
@@ -82,6 +106,12 @@ export class OracleDatabase implements INodeType {
   };
 
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
+    if (typeof String.prototype.replaceAll === "undefined") {
+      String.prototype.replaceAll = function (match, replace) {
+        return this.replace(new RegExp(match, 'g'), () => replace);
+      }
+    }
+
     const credentials = await this.getCredentials("oracleCredentials");
     const oracleCredentials = {
       user: String(credentials.user),
@@ -98,23 +128,63 @@ export class OracleDatabase implements INodeType {
     let returnItems = [];
 
     try {
-      //get parameter list:
-      const parameterIDataObjectList = ((this.getNodeParameter('params', 0, {}) as IDataObject).values as {[key: string]: string }[]) || [];
-      const parameterMap: { [key: string]: string } = parameterIDataObjectList.reduce((result, item) => {
-        result[item.name] = item.value;
-        return result;
-      }, {});
-    
       //get query
-      const query = this.getNodeParameter("query", 0) as string;
+      let query = this.getNodeParameter("query", 0) as string;
+
+      //get list of param objects entered by user:
+      const parameterIDataObjectList = ((this.getNodeParameter('params', 0, {}) as IDataObject).values as { name: string, value: string | number, datatype: string, parseInStatement: boolean }[]) || [];
+      
+      //convert parameterIDataObjectList to map of BindParameters that OracleDB wants
+      const bindParameters: { [key: string]: oracledb.BindParameter } = parameterIDataObjectList.reduce((result: { [key: string]: oracledb.BindParameter }, item) => {
+
+        //set data type to be correct type
+        let datatype: number | string | undefined = undefined;
+        if (item.datatype && item.datatype === 'number') {
+          datatype = oracledb.NUMBER;
+        } else {
+          datatype = oracledb.STRING;
+        }
+
+        if (!item.parseInStatement) {
+          //normal process.
+          result[item.name] = { type: datatype, val: item.datatype && item.datatype === 'number' ? Number(item.value) : String(item.value) };
+          return result;
+        } else {
+          //in this else block, we make it possible to use a parameter for an IN statement
+
+          const valList = item.value.toString().split(',');
+          let generatedSqlString = '(';
+          const crypto = require('crypto');
+          for (let i = 0; i < valList.length; i++) {
+            //generate unique parameter names for each item in list
+            const uniqueId: String = crypto.randomUUID().replaceAll('-', '_'); //dashes don't work in parameter names.
+            const newParamName = item.name + uniqueId;
+
+            //add new param to param list
+            result[newParamName] = { type: datatype, val: item.datatype && item.datatype === 'number' ? Number(valList[i]) : String(valList[i]) };
+
+            //create sql sting for list with new param names
+            generatedSqlString += `:${newParamName},`
+          }
+
+          generatedSqlString = generatedSqlString.slice(0, -1) + ')'; //replace trailing comma with closing parenthesis.
+
+          //replace all occurrences of original parameter name with new generated sql
+          query = query.replaceAll(":" + item.name, generatedSqlString);
+
+          return result;
+        }
+      }, {});
 
       //execute query
-      const result = await connection.execute(query, parameterMap, {
+      const result = await connection.execute(query, bindParameters, {
         outFormat: oracledb.OUT_FORMAT_OBJECT,
       });
+
       returnItems = this.helpers.returnJsonArray(
         result as unknown as IDataObject[]
       );
+
     } catch (error) {
       throw new NodeOperationError(this.getNode(), error.message);
     } finally {
@@ -131,4 +201,16 @@ export class OracleDatabase implements INodeType {
 
     return this.prepareOutputData(returnItems);
   }
+}
+
+declare global {
+  interface String {
+    replaceAll(match: string | RegExp, replace: string): string;
+  }
+}
+
+if (typeof String.prototype.replaceAll === 'undefined') {
+  String.prototype.replaceAll = function (match: string | RegExp, replace: string): string {
+    return this.replace(new RegExp(match, 'g'), replace);
+  };
 }
