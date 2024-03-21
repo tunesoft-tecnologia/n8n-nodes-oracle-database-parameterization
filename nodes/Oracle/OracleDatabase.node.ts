@@ -7,7 +7,6 @@ import {
   INodeTypeDescription,
   NodeOperationError,
 } from "n8n-workflow";
-import { ConnectionAttributes } from "oracledb";
 import oracledb from "oracledb";
 import { OracleConnection } from "./core/connection";
 
@@ -177,9 +176,14 @@ export class OracleDatabase implements INodeType {
       }, {});
 
       //execute query
-      const result = await connection.execute(query, bindParameters, {
-        outFormat: oracledb.OUT_FORMAT_OBJECT,
-      });
+      const result = await connection.execute(
+        query, 
+        bindParameters, 
+        {
+          outFormat: oracledb.OUT_FORMAT_OBJECT,
+          autoCommit: true,
+        },
+      );
 
       returnItems = this.helpers.returnJsonArray(
         result as unknown as IDataObject[]
