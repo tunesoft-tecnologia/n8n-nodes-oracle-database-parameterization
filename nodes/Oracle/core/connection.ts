@@ -17,6 +17,8 @@ export class OracleConnection implements DatabaseConnection<Connection> {
     if (!useThinMode) {
       oracledb.initOracleClient({ libDir: process.env.LD_LIBRARY_PATH });
     }
+
+    oracledb.fetchAsString = [ oracledb.CLOB ];
   }
 
   async getConnection(): Promise<Connection> {
