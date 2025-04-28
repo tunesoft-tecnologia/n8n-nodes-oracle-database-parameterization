@@ -7,11 +7,12 @@ export class OracleConnection implements DatabaseConnection<Connection> {
   private databaseConfig: ConnectionAttributes;
 
   constructor(credentials: OracleCredentials, useThinMode = true) {
-    const { user, password, connectionString } = credentials;
+    const { user, password, connectionString, privilege } = credentials;
     this.databaseConfig = {
       user,
       password,
       connectionString,
+      privilege
     } as ConnectionAttributes;
 
     if (!useThinMode) {

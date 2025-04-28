@@ -27,6 +27,12 @@ export class Oracle implements ICredentialType {
       default: "",
     },
     {
+      displayName: "Privilege",
+      name: "privilege",
+      type: "number",
+      default: null
+    },
+    {
       displayName: "Connection String",
       name: "connectionString",
       type: "string",
